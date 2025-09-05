@@ -1,5 +1,8 @@
 # Jar-Obfuscator V2
 
+# 作者精力有限，暂不维护了
+# 作者主要精力将放在 jar-analzyer 和 class-obf 工具的维护
+
 <img alt="gitleaks badge" src="https://img.shields.io/badge/protected%20by-gitleaks-blue">
 
 ![](https://github.com/jar-analyzer/jar-obfuscator/workflows/maven%20check/badge.svg)
