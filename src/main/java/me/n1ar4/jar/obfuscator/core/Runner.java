@@ -451,6 +451,12 @@ public class Runner {
                 }
                 String desc = BytecodeRemapUtil.remapDesc(originalDesc);
                 String groupOwner = findMethodGroupOwner(key.getName(), oldMethodName, originalDesc);
+                ClassReference groupOwnerClass = AnalyzeEnv.classMap.get(new ClassReference.Handle(groupOwner));
+                // 接口方法名是接口 ABI 的一部分。实现类会通过 invokeinterface 调用，
+                // 因此接口及其所有实现必须保持该方法名一致。
+                if (groupOwnerClass != null && groupOwnerClass.isInterface()) {
+                    continue;
+                }
                 String newGroupOwner = ObfEnv.classNameObfMapping.getOrDefault(groupOwner, groupOwner);
                 MethodReference.Handle groupHandle = new MethodReference.Handle(
                         new ClassReference.Handle(newGroupOwner), oldMethodName, desc);
@@ -582,7 +588,7 @@ public class Runner {
             byte[] code = StringDecryptDump.dump();
             String name = StringDecryptDump.className;
             String[] parts = name.split("/");
-            Path dir = tmpDir;
+            Path dir = TransformerUtil.classRoot();
             for (int i = 0; i < parts.length - 1; i++) {
                 dir = dir.resolve(parts[i]);
             }

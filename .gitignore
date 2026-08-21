@@ -42,3 +42,4 @@ __pycache__/
 /cmake-*/
 /code-encryptor-temp/
 /jar-obfuscator-temp/
+/test/.work/

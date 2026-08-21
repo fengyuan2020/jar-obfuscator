@@ -4,7 +4,11 @@
 
 更新日志：
 
-- [优化] 用户无需再提供 `CLASSPATH` 即可完成花指令混淆
+- [BUG] 修复接口方法混淆兼容性 @4ra1n
+- [BUG] 修复 `Spring Boot` 与 `WAR` 字符串解密输出 @4ra1n
+- [优化] 花指令保留 `Frame` 并扩展至五级 @4ra1n
+- [优化] 移除 `jar-obf-lib` 无需 `CLASSPATH` @4ra1n
+- [测试] 新增 `JDK 8 JDK 17 JDK 25` 全量测试 @4ra1n
 
 ## 2.0.1
 
