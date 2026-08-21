@@ -2,6 +2,7 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+!test/projects/**/target/
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
@@ -43,8 +44,9 @@ log/
 *.jar
 *.yml
 *.yaml
+!test/projects/**/*.yml
+!test/projects/**/*.yaml
 cmake-*/
 code-encryptor-temp/
-jar-obf-lib/
 jar-obfuscator-temp/
 token.txt
