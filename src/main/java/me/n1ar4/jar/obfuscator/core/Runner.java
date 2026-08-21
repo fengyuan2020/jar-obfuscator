@@ -31,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -361,20 +360,6 @@ public class Runner {
             logger.error("run error: {}", e.toString());
         }
 
-        // 2025/06/23 处理某些情况下找不到依赖的问题
-        Path dirPath = Paths.get(CustomClassLoader.LIB_DIR);
-        try {
-            Files.createDirectory(dirPath);
-            logger.info("已成功创建 {} 目录", CustomClassLoader.LIB_DIR);
-            Files.write(dirPath.resolve(Paths.get("README.md")), ("# README\n" +
-                    "\n" +
-                    "一些情况下混淆报错可能需要依赖库\n" +
-                    "\n" +
-                    "请将依赖放在 `jar-obf-lib` 目录中").getBytes(StandardCharsets.UTF_8));
-        } catch (Exception ignored) {
-            logger.warn("无法创建 {} 目录", CustomClassLoader.LIB_DIR);
-        }
-
         Path tmpDir = Paths.get(Const.TEMP_DIR);
         try (Stream<Path> stream = Files.walk(tmpDir)) {
             stream.filter(Files::isRegularFile)
@@ -645,7 +630,7 @@ public class Runner {
 
         if (config.isEnableJunk()) {
             // 花指令混淆
-            JunkCodeTransformer.transform(config, loader);
+            JunkCodeTransformer.transform(config);
         }
 
         // 生成混淆后目标

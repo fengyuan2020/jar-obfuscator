@@ -58,6 +58,22 @@ public class TransformerUtil {
         writeAtomically(classPath, classWriter.toByteArray());
     }
 
+    /**
+     * Transforms a class without resolving its type hierarchy. Existing stack map
+     * frames are preserved and only max stack/local values are recalculated.
+     *
+     * <p>This is suitable for visitors that add only straight-line, stack-balanced
+     * bytecode. In particular, it lets junk-code generation operate on classes
+     * that reference dependencies which are not present during obfuscation.</p>
+     */
+    public static void transformClassPreservingFrames(Path classPath,
+                                                      VisitorFactory visitorFactory) throws IOException {
+        ClassReader classReader = new ClassReader(Files.readAllBytes(classPath));
+        ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
+        classReader.accept(visitorFactory.create(classWriter), ClassReader.EXPAND_FRAMES);
+        writeAtomically(classPath, classWriter.toByteArray());
+    }
+
     public static void writeAtomically(Path path, byte[] data) throws IOException {
         ensureUnderTempDir(path);
         Path parent = path.getParent();

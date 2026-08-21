@@ -26,7 +26,6 @@ import java.util.jar.JarInputStream;
 
 public class CustomClassLoader extends ClassLoader {
     private static final Logger logger = LogManager.getLogger();
-    public static final String LIB_DIR = "jar-obf-lib";
     // 缓冲处理
     private final Map<String, byte[]> classCache = new ConcurrentHashMap<>();
 
@@ -57,20 +56,6 @@ public class CustomClassLoader extends ClassLoader {
         if (classData != null) {
             classCache.put(className, classData);
             return classData;
-        }
-        // 然后尝试从库目录中的其他JAR文件加载
-        File libDir = new File(LIB_DIR);
-        if (libDir.exists() && libDir.isDirectory()) {
-            File[] jarFiles = libDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".jar"));
-            if (jarFiles != null) {
-                for (File jarFile : jarFiles) {
-                    classData = loadClassFromJar(jarFile, className);
-                    if (classData != null) {
-                        classCache.put(className, classData);
-                        return classData;
-                    }
-                }
-            }
         }
         return null;
     }

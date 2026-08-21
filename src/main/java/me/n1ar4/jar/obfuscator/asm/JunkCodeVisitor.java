@@ -15,11 +15,18 @@ package me.n1ar4.jar.obfuscator.asm;
 import me.n1ar4.jar.obfuscator.Const;
 import me.n1ar4.jar.obfuscator.config.BaseConfig;
 import me.n1ar4.jar.obfuscator.utils.JunkUtil;
-import me.n1ar4.jar.obfuscator.utils.RandomUtil;
 import me.n1ar4.jrandom.core.JRandom;
 import me.n1ar4.log.LogManager;
 import me.n1ar4.log.Logger;
-import org.objectweb.asm.*;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.ModuleVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.RecordComponentVisitor;
+import org.objectweb.asm.TypePath;
 
 
 public class JunkCodeVisitor extends ClassVisitor {
@@ -89,12 +96,22 @@ public class JunkCodeVisitor extends ClassVisitor {
 
     @Override
     public void visitEnd() {
-        // 添加无意义的代码
-        if (!shouldSkip && config.getJunkLevel() > 2) {
-            JunkUtil.addHttpCode(cv);
+        if (!shouldSkip && config.getJunkLevel() >= 4 && tryConsumeJunkBudget()) {
             JunkUtil.addPrintMethod(cv);
         }
+        if (!shouldSkip && config.getJunkLevel() >= 5 && tryConsumeJunkBudget()) {
+            JunkUtil.addHttpCode(cv);
+        }
         super.visitEnd();
+    }
+
+    private static boolean tryConsumeJunkBudget() {
+        if (JUNK_NUM >= MAX_JUNK_NUM) {
+            logger.debug("max junk code");
+            return false;
+        }
+        JUNK_NUM++;
+        return true;
     }
 
     @Override
@@ -141,138 +158,6 @@ public class JunkCodeVisitor extends ClassVisitor {
         }
 
         @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
-            // LEVEL 1
-            if (config.getJunkLevel() > 0) {
-                JUNK_NUM++;
-                if (JUNK_NUM > MAX_JUNK_NUM) {
-                    logger.debug("max junk code");
-                    super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
-                    return;
-                }
-
-                mv.visitTypeInsn(Opcodes.NEW, "java/lang/String");
-                mv.visitInsn(Opcodes.DUP);
-                mv.visitLdcInsn(JRandom.getInstance().randomString(16));
-                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/String", "<init>",
-                        "(Ljava/lang/String;)V", false);
-                mv.visitInsn(Opcodes.POP);
-
-                Label ifLabel = new Label();
-                Label endLabel = new Label();
-
-                mv.visitInsn(Opcodes.ICONST_1);
-                mv.visitJumpInsn(Opcodes.IFNE, endLabel);
-
-                mv.visitLabel(ifLabel);
-                mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System",
-                        "out", "Ljava/io/PrintStream;");
-                mv.visitLdcInsn(JRandom.getInstance().randomString(16));
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",
-                        "println", "(Ljava/lang/String;)V", false);
-                mv.visitJumpInsn(Opcodes.GOTO, endLabel);
-                mv.visitLabel(endLabel);
-                mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            }
-            super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
-        }
-
-        @Override
-        public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
-            // LEVEL 2
-            if (config.getJunkLevel() > 1) {
-                JUNK_NUM++;
-                if (JUNK_NUM > MAX_JUNK_NUM) {
-                    logger.debug("max junk code");
-                    super.visitFieldInsn(opcode, owner, name, descriptor);
-                    return;
-                }
-
-                Label startLoop = new Label();
-                Label endLoop = new Label();
-                mv.visitLabel(startLoop);
-                mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-                mv.visitInsn(Opcodes.NOP);
-                mv.visitJumpInsn(Opcodes.GOTO, endLoop);
-                mv.visitLabel(endLoop);
-                mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            }
-            super.visitFieldInsn(opcode, owner, name, descriptor);
-        }
-
-        @Override
-        public void visitTypeInsn(int opcode, String type) {
-            // LEVEL 3
-            if (config.getJunkLevel() > 2) {
-                JUNK_NUM++;
-                if (JUNK_NUM > MAX_JUNK_NUM) {
-                    logger.debug("max junk code");
-                    super.visitTypeInsn(opcode, type);
-                    return;
-                }
-                mv.visitInsn(Opcodes.NOP);
-                mv.visitInsn(Opcodes.NOP);
-                mv.visitTypeInsn(Opcodes.NEW, "java/util/ArrayList");
-                mv.visitInsn(Opcodes.DUP);
-                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/ArrayList",
-                        "<init>", "()V", false);
-                mv.visitInsn(Opcodes.POP);
-                mv.visitInsn(Opcodes.NOP);
-            }
-            super.visitTypeInsn(opcode, type);
-        }
-
-        @Override
-        public void visitAttribute(Attribute attribute) {
-            super.visitAttribute(attribute);
-        }
-
-        @Override
-        public AnnotationVisitor visitTypeAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
-            return super.visitTypeAnnotation(typeRef, typePath, descriptor, visible);
-        }
-
-        @Override
-        public MethodVisitor getDelegate() {
-            return super.getDelegate();
-        }
-
-        @Override
-        public void visitEnd() {
-            super.visitEnd();
-        }
-
-        @Override
-        public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
-            return super.visitAnnotation(descriptor, visible);
-        }
-
-        @Override
-        public AnnotationVisitor visitAnnotationDefault() {
-            return super.visitAnnotationDefault();
-        }
-
-        @Override
-        public AnnotationVisitor visitInsnAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
-            return super.visitInsnAnnotation(typeRef, typePath, descriptor, visible);
-        }
-
-        @Override
-        public AnnotationVisitor visitLocalVariableAnnotation(int typeRef, TypePath typePath, Label[] start, Label[] end, int[] index, String descriptor, boolean visible) {
-            return super.visitLocalVariableAnnotation(typeRef, typePath, start, end, index, descriptor, visible);
-        }
-
-        @Override
-        public AnnotationVisitor visitParameterAnnotation(int parameter, String descriptor, boolean visible) {
-            return super.visitParameterAnnotation(parameter, descriptor, visible);
-        }
-
-        @Override
-        public AnnotationVisitor visitTryCatchAnnotation(int typeRef, TypePath typePath, String descriptor, boolean visible) {
-            return super.visitTryCatchAnnotation(typeRef, typePath, descriptor, visible);
-        }
-
-        @Override
         public void visitAnnotableParameterCount(int parameterCount, boolean visible) {
             super.visitAnnotableParameterCount(parameterCount, visible);
         }
@@ -280,133 +165,75 @@ public class JunkCodeVisitor extends ClassVisitor {
         @Override
         public void visitCode() {
             super.visitCode();
+            emitJunkCode();
         }
 
-        @Override
-        public void visitFrame(int type, int numLocal, Object[] local, int numStack, Object[] stack) {
-            super.visitFrame(type, numLocal, local, numStack, stack);
-        }
-
-        @Override
-        public void visitIincInsn(int varIndex, int increment) {
-            // LEVEL 4
-            if (config.getJunkLevel() > 3) {
-                JUNK_NUM++;
-                if (JUNK_NUM > MAX_JUNK_NUM) {
-                    logger.debug("max junk code");
-                    super.visitIincInsn(varIndex, increment);
-                    return;
-                }
-                mv.visitInsn(RandomUtil.genICONSTOpcode());
-                mv.visitInsn(Opcodes.POP);
-                mv.visitInsn(RandomUtil.genICONSTOpcode());
-                mv.visitInsn(Opcodes.NOP);
-                mv.visitInsn(Opcodes.POP);
+        private void emitJunkCode() {
+            int level = config.getJunkLevel();
+            if (level >= 1 && tryConsumeJunkBudget()) {
+                emitArithmeticNoise();
             }
-            super.visitIincInsn(varIndex, increment);
-        }
-
-        @Override
-        public void visitInsn(int opcode) {
-            // LEVEL 5
-            if (config.getJunkLevel() > 4) {
-                JUNK_NUM++;
-                if (JUNK_NUM > MAX_JUNK_NUM) {
-                    logger.debug("max junk code");
-                    super.visitInsn(opcode);
-                    return;
-                }
-                mv.visitInsn(RandomUtil.genICONSTOpcode());
-                mv.visitInsn(RandomUtil.genICONSTOpcode());
-                mv.visitInsn(Opcodes.IADD);
-                mv.visitInsn(Opcodes.POP);
+            if (level >= 2 && tryConsumeJunkBudget()) {
+                emitStringNoise();
             }
-            super.visitInsn(opcode);
-        }
-
-        @Override
-        public void visitIntInsn(int opcode, int operand) {
-            super.visitIntInsn(opcode, operand);
-        }
-
-        @Override
-        public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
-            super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments);
-        }
-
-        @Override
-        public void visitJumpInsn(int opcode, Label label) {
-            super.visitJumpInsn(opcode, label);
-        }
-
-        @Override
-        public void visitLabel(Label label) {
-            super.visitLabel(label);
-        }
-
-        @Override
-        public void visitLdcInsn(Object value) {
-            // LEVEL 5
-            if (config.getJunkLevel() > 4) {
-                JUNK_NUM++;
-                if (JUNK_NUM > MAX_JUNK_NUM) {
-                    logger.debug("max junk code");
-                    super.visitLdcInsn(value);
-                    return;
-                }
-                mv.visitInsn(RandomUtil.genICONSTOpcode());
-                mv.visitInsn(Opcodes.POP);
-                mv.visitInsn(RandomUtil.genICONSTOpcode());
-                mv.visitInsn(Opcodes.POP);
-                super.visitLdcInsn(value);
-                return;
+            if (level >= 3 && tryConsumeJunkBudget()) {
+                emitCollectionNoise();
             }
-            super.visitLdcInsn(value);
+            if (level >= 4 && tryConsumeJunkBudget()) {
+                emitStringOperationNoise();
+            }
+            if (level >= 5 && tryConsumeJunkBudget()) {
+                emitTimeNoise();
+            }
         }
 
-        @Override
-        public void visitLineNumber(int line, Label start) {
-            super.visitLineNumber(line, start);
+        // Level 1: simple integer arithmetic with an empty entry/exit stack.
+        private void emitArithmeticNoise() {
+            mv.visitInsn(Opcodes.NOP);
+            mv.visitInsn(Opcodes.ICONST_2);
+            mv.visitInsn(Opcodes.ICONST_3);
+            mv.visitInsn(Opcodes.IMUL);
+            mv.visitInsn(Opcodes.POP);
         }
 
-        @Override
-        public void visitLocalVariable(String name, String descriptor, String signature, Label start, Label end, int index) {
-            super.visitLocalVariable(name, descriptor, signature, start, end, index);
+        // Level 2: short-lived JDK object allocation.
+        private void emitStringNoise() {
+            mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitLdcInsn(JRandom.getInstance().randomString(16));
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>",
+                    "(Ljava/lang/String;)V", false);
+            mv.visitInsn(Opcodes.POP);
         }
 
-        @Override
-        public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
-            super.visitLookupSwitchInsn(dflt, keys, labels);
+        // Level 3: collection interaction with no retained local state.
+        private void emitCollectionNoise() {
+            mv.visitTypeInsn(Opcodes.NEW, "java/util/ArrayList");
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/ArrayList", "<init>", "()V", false);
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitLdcInsn(JRandom.getInstance().randomString(12));
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/ArrayList", "add",
+                    "(Ljava/lang/Object;)Z", false);
+            mv.visitInsn(Opcodes.POP);
+            mv.visitInsn(Opcodes.POP);
         }
 
-        @Override
-        public void visitMaxs(int maxStack, int maxLocals) {
-            super.visitMaxs(maxStack, maxLocals);
+        // Level 4: JDK string operation that leaves the operand stack unchanged.
+        private void emitStringOperationNoise() {
+            mv.visitLdcInsn(JRandom.getInstance().randomString(24));
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "length", "()I", false);
+            mv.visitIntInsn(Opcodes.BIPUSH, 31);
+            mv.visitInsn(Opcodes.IXOR);
+            mv.visitInsn(Opcodes.POP);
         }
 
-        @Override
-        public void visitMultiANewArrayInsn(String descriptor, int numDimensions) {
-            super.visitMultiANewArrayInsn(descriptor, numDimensions);
-        }
-
-        @Override
-        public void visitParameter(String name, int access) {
-            super.visitParameter(name, access);
-        }
-
-        @Override
-        public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
-            super.visitTableSwitchInsn(min, max, dflt, labels);
-        }
-
-        @Override
-        public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
-            super.visitTryCatchBlock(start, end, handler, type);
-        }
-
-        @Override
-        public void visitVarInsn(int opcode, int varIndex) {
-            super.visitVarInsn(opcode, varIndex);
+        // Level 5: category-2 values exercise a larger max-stack without branches.
+        private void emitTimeNoise() {
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/System", "nanoTime", "()J", false);
+            mv.visitLdcInsn(0L);
+            mv.visitInsn(Opcodes.LXOR);
+            mv.visitInsn(Opcodes.POP2);
         }
     }
 }

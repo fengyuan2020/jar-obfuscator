@@ -83,10 +83,15 @@ enableDeleteCompileInfo: true
 # 开启花指令混淆
 enableJunk: true
 # 花指令级别
-# 最低1 最高5
-# 使用 3 以上会生成垃圾方法
+# 最低1 最高5，等级递进叠加
+# 1: 整数运算
+# 2: 字符串对象
+# 3: 集合操作
+# 4: 字符串操作和垃圾方法
+# 5: 时间操作和 HTTP 垃圾方法
+# 花指令不重算 StackMap Frame 因此不依赖外部 classpath
 junkLevel: 5
-# 一个类中的花指令数量上限
+# 单个类可插入的花指令模板数量上限
 maxJunkOneClass: 2000
 
 # 是否打印所有主函数

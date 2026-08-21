@@ -15,7 +15,6 @@ package me.n1ar4.jar.obfuscator.transform;
 import me.n1ar4.jar.obfuscator.asm.JunkCodeVisitor;
 import me.n1ar4.jar.obfuscator.config.BaseConfig;
 import me.n1ar4.jar.obfuscator.core.ObfEnv;
-import me.n1ar4.jar.obfuscator.loader.CustomClassLoader;
 import me.n1ar4.log.LogManager;
 import me.n1ar4.log.Logger;
 import org.objectweb.asm.MethodTooLargeException;
@@ -28,7 +27,7 @@ import java.util.Map;
 public class JunkCodeTransformer {
     private static final Logger logger = LogManager.getLogger();
 
-    public static void transform(BaseConfig config, CustomClassLoader loader) {
+    public static void transform(BaseConfig config) {
         for (Map.Entry<String, String> entry : ObfEnv.classNameObfMapping.entrySet()) {
             String newName = entry.getValue();
             Path newClassPath = TransformerUtil.classPath(newName);
@@ -40,7 +39,7 @@ public class JunkCodeTransformer {
                 continue;
             }
             try {
-                TransformerUtil.transformClass(newClassPath, loader,
+                TransformerUtil.transformClassPreservingFrames(newClassPath,
                         classWriter -> new JunkCodeVisitor(classWriter, config));
             } catch (MethodTooLargeException ex) {
                 logger.error("method too large");
